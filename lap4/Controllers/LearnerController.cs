@@ -3,21 +3,57 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using lap4.Models;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace lap4.Controllers
 {
     public class LearnerController : Controller
     {
         private SchoolContext db;
+        private int pageSize = 3;
         public LearnerController(SchoolContext context)
         {
             db = context;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(int? mid)
         {
-            var learners = db.Learner.Include(m => m.Major).ToList();
-            return View(learners);
+            var learners = (IQueryable<Learner>)db.Learner.Include(m => m.Major);
+            if(mid != null)
+            {
+                learners = (IQueryable<Learner>)db.Learner.Where(l => l.MajorID == mid).Include(m => m.Major);
+            }
+            int pageNum = (int)Math.Ceiling(learners.Count() / (float)pageSize);
+            ViewBag.PageNum = pageNum;
+            var result = learners.Take(pageSize).ToList();
+            return View(result);
+        }
+        public IActionResult ResultLearnerFilter(int? mid, string keyword, int? pageIndex)
+        {
+            IQueryable<Learner> learners = (IQueryable<Learner>)db.Learner;
+            int page = (int)(pageIndex == null || pageIndex <= 0 ? 1 : pageIndex);
+            if (mid != null)
+            {
+                learners = learners.Where(l => l.MajorID == mid);
+                ViewBag.mid = mid;
+            }
+            if (keyword != null)
+            {
+                learners = learners.Where(l => l.FirstMidName.ToLower()
+                    .Contains(keyword.ToLower()));
+                ViewBag.keyword = keyword;
+            }
+            int pageNum = (int)Math.Ceiling((float)learners.Count() / (float)pageSize);
+            ViewBag.pageNum = pageNum;
+            var result = learners.Skip(pageSize * (page - 1))
+                .Take(pageSize).Include(m => m.Major).ToList();
+
+            return PartialView("LearnerTable", result);
+        }
+        public IActionResult LearnerByMajorID(int mid)
+        {
+            var learners = db.Learner.SkipWhile(l=>l.MajorID==mid).Include(m=> m.Major).ToList();
+            return PartialView("LearnerTable",learners);
         }
 
         public IActionResult Create()

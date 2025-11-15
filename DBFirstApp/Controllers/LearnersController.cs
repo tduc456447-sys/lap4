@@ -139,8 +139,6 @@ namespace DBFirstApp.Controllers
 
             return View(learner);
         }
-
-        // POST: Learners/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
