@@ -14,10 +14,24 @@ namespace lap4.Controllers
             db = context;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(int? mid)
         {
-            var learners = db.Learner.Include(m => m.Major).ToList();
-            return View(learners);
+            if(mid == null)
+            {
+                var learners = db.Learner.Include(m => m.Major).ToList();
+                return View(learners);
+            }
+            else
+            {
+                var learners = db.Learner.Where(l => l.MajorID == mid).Include(m => m.Major).ToList();
+                return View(learners);
+            }
+        }
+
+        public IActionResult LearnerByMajorID(int mid)
+        {
+            var learners = db.Learner.SkipWhile(l=>l.MajorID==mid).Include(m=> m.Major).ToList();
+            return PartialView("LearnerTable",learners);
         }
 
         public IActionResult Create()
